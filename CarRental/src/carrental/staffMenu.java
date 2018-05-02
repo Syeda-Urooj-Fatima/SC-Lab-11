@@ -5,11 +5,14 @@
  */
 package carrental;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import javax.swing.table.DefaultTableModel;
 import org.hibernate.HibernateException;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -285,7 +288,5 @@ public class staffMenu extends javax.swing.JFrame {
     private javax.swing.JLabel lblTitle;
     private javax.swing.JLabel lblUser;
     // End of variables declaration//GEN-END:variables
-
-    
 
 }

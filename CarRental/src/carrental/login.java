@@ -6,6 +6,7 @@
 package carrental;
 import java.awt.Image;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -36,6 +37,9 @@ public class login extends javax.swing.JFrame {
             System.err.println("Failed to create sessionFactory object." + ex);
             throw new ExceptionInInitializerError(ex); 
         }
+        
+        updateFine();
+        updateBookings();
     }
 
     /**
@@ -312,5 +316,74 @@ public class login extends javax.swing.JFrame {
          } finally {
             session.close(); 
          }
+    }
+    
+    public static void updateFine()
+    {
+        Session session = factory.openSession();
+        Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+            //List employees = session.createQuery("FROM carrental.Staff").list();String hql = "FROM Employee E WHERE E.id = :employee_id";
+            String hql = "FROM Customerbookings cb WHERE cb.status = :status";
+            Query query = session.createQuery(hql);
+            query.setParameter("status","Due");
+            List results = query.list();
+
+            for (Iterator iterator = results.iterator(); iterator.hasNext();){
+                Customerbookings cb = (Customerbookings) iterator.next();
+                Date date = cb.getBookingDate();
+                Date date_now = new Date(); 
+                long diff = date_now.getTime() - (date.getTime()+(cb.getTimePeriod()-1)*24*60*60*1000);
+                int days = (int)TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+                Customers c = (Customers)session.get(Customers.class, cb.getCustomers().getId()); 
+                c.setFine(days*500);
+                session.update(c);
+            }
+
+            tx.commit();
+        } catch (HibernateException e) {
+            if (tx!=null) tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+    }
+    
+    public static void updateBookings()
+    {
+        Session session = factory.openSession();
+        Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+            String hql = "FROM Customerbookings cb WHERE cb.status = :status";
+            Query query = session.createQuery(hql);
+            query.setParameter("status","Ongoing");
+            List results = query.list();
+
+            for (Iterator iterator = results.iterator(); iterator.hasNext();){
+                Customerbookings cb = (Customerbookings) iterator.next();
+                Date date = cb.getBookingDate();
+                Date date_now = new Date(); 
+                long diff = date_now.getTime() - (date.getTime()+(cb.getTimePeriod()*24*60*60*1000));
+                int days = (int)TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+                if(days==0)
+                {
+                    Customerbookings c = (Customerbookings)session.get(Customerbookings.class, cb.getBookingId()); 
+                    c.setStatus("Completed");
+                    session.update(c);
+                    Cars car = (Cars)session.get(Cars.class, cb.getCars().getRegistrationNo()); 
+                    car.setAvailability("Available");
+                    session.update(car);
+                }
+            }
+
+            tx.commit();
+        } catch (HibernateException e) {
+            if (tx!=null) tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
     }
 }

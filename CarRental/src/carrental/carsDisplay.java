@@ -5,8 +5,11 @@
  */
 package carrental;
 
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import static javax.swing.JFrame.EXIT_ON_CLOSE;
 import javax.swing.JOptionPane;
@@ -40,6 +43,7 @@ public class carsDisplay extends javax.swing.JFrame {
         }
         
         listCars();
+        updateBookings();
     }
 
     public carsDisplay(String name) {
@@ -422,5 +426,42 @@ public class carsDisplay extends javax.swing.JFrame {
          } finally {
             session.close(); 
          }
+    }
+    
+    public static void updateBookings()
+    {
+        Session session = factory.openSession();
+        Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+            String hql = "FROM Customerbookings cb WHERE cb.status = :status";
+            Query query = session.createQuery(hql);
+            query.setParameter("status","Ongoing");
+            List results = query.list();
+
+            for (Iterator iterator = results.iterator(); iterator.hasNext();){
+                Customerbookings cb = (Customerbookings) iterator.next();
+                Date date = cb.getBookingDate();
+                Date date_now = new Date(); 
+                long diff = date_now.getTime() - (date.getTime()+(cb.getTimePeriod()*24*60*60*1000));
+                int days = (int)TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+                if(days==0)
+                {
+                    Customerbookings c = (Customerbookings)session.get(Customerbookings.class, cb.getBookingId()); 
+                    c.setStatus("Completed");
+                    session.update(c);
+                    Cars car = (Cars)session.get(Cars.class, cb.getCars().getRegistrationNo()); 
+                    car.setAvailability("Available");
+                    session.update(car);
+                }
+            }
+
+            tx.commit();
+        } catch (HibernateException e) {
+            if (tx!=null) tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
     }
 }
