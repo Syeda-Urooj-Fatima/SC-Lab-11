@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<!-- Generated May 1, 2018 2:30:44 PM by Hibernate Tools 4.3.1 -->
+<hibernate-mapping>
+    <class name="carrental.Customerbookings" table="customerbookings" catalog="rental_car" optimistic-lock="version">
+        <id name="bookingId" type="java.lang.Integer">
+            <column name="Booking_ID" />
+            <generator class="identity" />
+        </id>
+        <many-to-one name="cars" class="carrental.Cars" fetch="select">
+            <column name="Car_ID" length="10" not-null="true" />
+        </many-to-one>
+        <many-to-one name="customers" class="carrental.Customers" fetch="select">
+            <column name="Cust_ID" not-null="true" />
+        </many-to-one>
+        <property name="bookingDate" type="date">
+            <column name="Booking_Date" length="10" not-null="true" />
+        </property>
+        <property name="timePeriod" type="int">
+            <column name="Time_period" not-null="true" />
+        </property>
+        <property name="status" type="string">
+            <column name="Status" length="15" not-null="true" />
+        </property>
+    </class>
+</hibernate-mapping>
